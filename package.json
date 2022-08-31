@@ -1,0 +1,34 @@
+{
+  "name": "my-project",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@chakra-ui/icons": "^2.0.2",
+    "@chakra-ui/react": "^2.2.1",
+    "@chakra-ui/switch": "^2.0.3",
+    "@portis/web3": "^4.0.7",
+    "@uauth/js": "^2.0.0",
+    "@uauth/web3modal": "^2.0.0",
+    "axios": "^0.27.2",
+    "ethers": "^5.6.9",
+    "file-system": "^2.2.2",
+    "next": "12.1.6",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "tw-elements": "^1.0.0-alpha12",
+    "web3modal": "^1.9.8"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.7",
+    "eslint": "8.18.0",
+    "eslint-config-next": "12.1.6",
+    "postcss": "^8.4.14",
+    "tailwindcss": "^3.1.4"
+  }
+}
