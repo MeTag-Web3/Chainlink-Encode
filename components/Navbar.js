@@ -1,28 +1,22 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import logo from "../public/icons/metag_logo.svg"
+import logo from "../public/icons/metag_logo.svg";
 import Image from "next/image";
 import { ethers } from "ethers";
 import Web3Modal from "web3modal";
-import providerOptionsObject from '../providerOptions';
+import providerOptionsObject from "../providerOptions";
 import UNSD from "./UNSD/index";
 
-
 function Navbar() {
-
+  const [walletAddress, setWalletAddress] = useState(null);
   const connectWallet = async () => {
-    let providerOptions = providerOptionsObject.providerOptions;
-    const web3Modal = new Web3Modal({
-      network: "mainnet", // optional
-      cacheProvider: false, // optional
-      providerOptions // required
-    });
-    
-    const instance = await web3Modal.connect();
-    const provider = new ethers.providers.Web3Provider(instance);
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+    await provider.send("eth_requestAccounts", []);
     const signer = provider.getSigner();
-}
-
+    const address = await signer.getAddress();
+    setWalletAddress(address);
+    console.log("Account:", await signer.getAddress());
+  };
 
   return (
     <header className="flex flex-wrap justify-center items-center sticky top-0 bg-transparent backdrop-blur-lg z-[99] transition duration-200 py-0.5 px-16">
@@ -42,7 +36,9 @@ function Navbar() {
           onClick={connectWallet}
           className="tetiary-1 font-roboto  text-white"
         >
-          Connect Wallet
+          {walletAddress === null
+            ? "Connect Wallet"
+            : `${walletAddress.slice(0, 11)}...`}
         </button>
       </div>
     </header>

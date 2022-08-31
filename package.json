@@ -17,7 +17,7 @@
     "@uauth/web3modal": "^2.0.0",
     "axios": "^0.27.2",
     "ethers": "^5.6.9",
-    "file-system": "^2.2.2",
+    "file-system": "^1.2.2",
     "next": "12.1.6",
     "react": "18.2.0",
     "react-dom": "18.2.0",

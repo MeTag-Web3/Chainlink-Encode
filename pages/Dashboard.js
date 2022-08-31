@@ -4,9 +4,9 @@ import portis from "../public/icons/portis.svg";
 import binance from "../public/icons/binance.svg";
 import { ethers } from "ethers";
 import Web3Modal from "web3modal";
-import tooltip from "../public/icons/tooltip.svg"
-import providerOptionsObject from '../providerOptions';
-import { useState } from "react";
+import tooltip from "../public/icons/tooltip.svg";
+import providerOptionsObject from "../providerOptions";
+import { useEffect, useState } from "react";
 import twitter from "../public/icons/twitter.svg";
 import discord from "../public/icons/discord.svg";
 import telegram from "../public/icons/telegram.svg";
@@ -15,53 +15,80 @@ import Gradient from "../components/Gradient";
 import axios from "axios";
 import Link from "next/link";
 import React from "react";
-
+import Head from "next/head";
+import ABI from "../ABI/metag_contract.json";
 
 function Dashboard() {
-
-
   // const [image, setImage] = useState("");
   const inputRef = React.useRef(null);
   const [userName, setUserName] = useState("");
   const [description, setDescription] = useState("");
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [social, setSocial] = useState(Object.create(null));
 
+  const saveSocial = (key, value) => {
+    setSocial(() => {
+      social[key] = value;
+      return social;
+    });
+  };
 
   const handleInputChange = (e) => {
     const val = e.target.value;
     setUserName(val);
   };
-    const handleValueChange = (e) => {
-      const val = e.target.value;
-      setDescription(val);
+  const handleValueChange = (e) => {
+    const val = e.target.value;
+    setDescription(val);
+  };
+
+  useEffect(() => {
+    const getUsers = async () => {
+      // alchemy
+      const alchemyProvider = new ethers.providers.AlchemyProvider(
+        "rinkeby",
+        process.env.API_KEY
+      );
+      // contract instance
+      const metagContract = new ethers.Contract(
+        "0x40339FC8AAd5a839b7e1Da237FED6E42ec72556c",
+        ABI,
+        alchemyProvider
+      );
+
+      const totalUser = await metagContract.userCount();
+      setTotalUsers(totalUser.toString());
+      console.log(`Total User: ${totalUsers}`);
     };
+    getUsers();
+  }, []);
 
   const [metamaskAccount, setMetamaskAccount] = useState("");
   const [binanceAccount, setBinanceAccount] = useState("");
   const [portisAccount, setPortisAccount] = useState("");
   const [imgUrl, setimgUrl] = useState("");
-  
+
   const connectWallet = async (event) => {
-    
     let injectedProvider;
     let providerOptions;
 
-    if (event.target.name == 'metamask') {
+    if (event.target.name == "metamask") {
       providerOptions = providerOptionsObject.metamask;
       injectedProvider = false;
     }
-    if (event.target.name == 'portis') {
+    if (event.target.name == "portis") {
       providerOptions = providerOptionsObject.portis;
       injectedProvider = true;
     }
-    if (event.target.name == 'binance') {
-     providerOptions = providerOptionsObject.binance;
-     injectedProvider = true;
+    if (event.target.name == "binance") {
+      providerOptions = providerOptionsObject.binance;
+      injectedProvider = true;
     }
 
     const web3Modal = new Web3Modal({
       cacheProvider: false, // optional
       disableInjectedProvider: injectedProvider,
-      providerOptions
+      providerOptions,
     });
 
     await web3Modal.clearCachedProvider();
@@ -70,39 +97,35 @@ function Dashboard() {
       const provider = await web3Modal.connect();
       const library = new ethers.providers.Web3Provider(provider);
       const accounts = await library.listAccounts();
-      if (event.target.name == 'metamask') {
+      if (event.target.name == "metamask") {
         setMetamaskAccount(accounts[0]);
       }
-      if (event.target.name == 'binance') {
+      if (event.target.name == "binance") {
         setBinanceAccount(accounts[0]);
       }
-      if (event.target.name == 'portis') {
+      if (event.target.name == "portis") {
         setPortisAccount(accounts[0]);
       }
 
       provider.on("accountsChanged", (accounts) => {
-        if (event.target.name == 'metamask') {
+        if (event.target.name == "metamask") {
           setMetamaskAccount(accounts[0]);
-         }
-         if (event.target.name == 'binance') {
+        }
+        if (event.target.name == "binance") {
           setBinanceAccount(accounts[0]);
-         }
-         if (event.target.name == 'portis') {
+        }
+        if (event.target.name == "portis") {
           setPortisAccount(accounts[0]);
-         }
+        }
       });
+    } catch (error) {
+      console.log("error", error);
     }
-      catch (error) {
-        console.log('error', error);
-    }
-  }
-  
-  
+  };
 
   const onSubmit = async (params) => {
-    
     const form = new FormData();
-    console.log(inputRef)
+    console.log(inputRef);
     form.append("file", inputRef.current.files[0]);
 
     const options = {
@@ -113,24 +136,22 @@ function Dashboard() {
       },
     };
 
-await fetch("https://api.nftport.xyz/v0/files", options)
-  .then(response => {
-    return response.json()
-  })
-  .then(responseJson => {
-    // Handle the response
-    console.log(responseJson);
-    console.log(responseJson.ipfs_url);
+    await fetch("https://api.nftport.xyz/v0/files", options)
+      .then((response) => {
+        return response.json();
+      })
+      .then((responseJson) => {
+        // Handle the response
+        console.log(responseJson);
+        console.log(responseJson.ipfs_url);
 
-    setimgUrl(responseJson.ipfs_url);
-    
-    // const { ipfs_url } = responseJson;
-    // document.getElementById('image').textContent = image;
-    
-  })
+        setimgUrl(responseJson.ipfs_url);
 
-    
-   await fetch(
+        // const { ipfs_url } = responseJson;
+        // document.getElementById('image').textContent = image;
+      });
+
+    await fetch(
       "https://api.nftport.xyz/v0/mints/easy/files?" +
         new URLSearchParams({
           chain: "polygon",
@@ -147,14 +168,46 @@ await fetch("https://api.nftport.xyz/v0/files", options)
         // Handle the response
         console.log(responseJson);
       });
-  }
+  };
 
+  const saveToBlockChain = async () => {
+    // alchemy
+    const alchemyProvider = new ethers.providers.AlchemyProvider(
+      "rinkeby",
+      process.env.API_KEY
+    );
+    // wallet
+    const wallet = new ethers.Wallet(
+      "ed16b2e3c3961da321b94eb5e0dd8a6669a0e69b1229c85737cfd8e186a61d78",
+      alchemyProvider
+    );
+    // contract instance
+    const contract_instance = new ethers.Contract(
+      "0x40339FC8AAd5a839b7e1Da237FED6E42ec72556c",
+      ABI,
+      wallet
+    );
+    // sending transaction
+    const txn = await contract_instance.setUser(
+      "test", // username
+      "test@test", // email
+      "", // metamask
+      "", // binance
+      "" // coinbase
+    );
+    await txn.wait();
+
+    console.log(`Transaction successful: ${txn.hash}`);
+  };
 
   return (
     <>
+      <Head>
+        <title>Dashboard</title>
+      </Head>
       <Gradient />
       <div className="text-[#F8FAFC] text-[24px] px-24 pb-6 pt-10 font-roboto font-bold relative">
-        Admin Dashboard
+        Admin Dashboard: Total Users {totalUsers}
       </div>
       <div className="flex flex-col px-24 relative">
         <div className=" bg-[#0f172a4d] rounded-3xl p-7">
@@ -244,12 +297,13 @@ await fetch("https://api.nftport.xyz/v0/files", options)
                 type="text"
                 placeholder="@getmetag"
                 className="border-[#334155] border bg-[#1E293B] rounded-lg text-[#DBEAFE] py-2 px-10 w-[600px]"
+                onChange={(e) => saveSocial("twitter", e.target.value)}
                 //   value={metamaskAccount}
                 //   onChange={(e) => setMetamaskAccount(e.target.value)}
               />
-              <button className="font-roboto  border px-[60px] py-2 border-[#6633FF] hover:bg-[#6633FF]">
+              {/* <button className="font-roboto  border px-[60px] py-2 border-[#6633FF] hover:bg-[#6633FF]">
                 Connect
-              </button>
+              </button> */}
             </div>
             <div className="flex  items-center justify-between mt-10">
               <div className="flex">
@@ -261,12 +315,13 @@ await fetch("https://api.nftport.xyz/v0/files", options)
                 type="text"
                 placeholder="https://discord.gg/hCNkDQcd"
                 className="border-[#334155] border bg-[#1E293B] rounded-lg text-[#DBEAFE] py-2 px-10 w-[600px]"
+                onChange={(e) => saveSocial("discord", e.target.value)}
                 //   value={metamaskAccount}
                 //   onChange={(e) => setMetamaskAccount(e.target.value)}
               />
-              <button className="font-roboto  border px-[60px] py-2 border-[#6633FF] hover:bg-[#6633FF]">
+              {/* <button className="font-roboto  border px-[60px] py-2 border-[#6633FF] hover:bg-[#6633FF]">
                 Connect
-              </button>
+              </button> */}
             </div>
             <div className="flex  items-center justify-between mt-10 mb-10">
               <div className="flex">
@@ -278,12 +333,13 @@ await fetch("https://api.nftport.xyz/v0/files", options)
                 type="text"
                 placeholder="@getmetag"
                 className="border-[#334155] border bg-[#1E293B] rounded-lg text-[#DBEAFE] py-2 px-10 w-[600px]"
+                onChange={(e) => saveSocial("telegram", e.target.value)}
                 //   value={metamaskAccount}
                 //   onChange={(e) => setMetamaskAccount(e.target.value)}
               />
-              <button className="font-roboto border px-[60px] py-2 border-[#6633FF] hover:bg-[#6633FF]">
+              {/* <button className="font-roboto border px-[60px] py-2 border-[#6633FF] hover:bg-[#6633FF]">
                 Connect
-              </button>
+              </button> */}
             </div>
           </div>
 
@@ -346,6 +402,7 @@ await fetch("https://api.nftport.xyz/v0/files", options)
           </div>
         </div>
       </div>
+      <button onClick={saveToBlockChain}>Save to Blockchain</button>
     </>
   );
 }
